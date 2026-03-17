@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "parkol"
+version = "0.1.0"
+description = "Exact uniform sampling of proper graph colourings via soft colouring and partial rejection sampling"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9"
+authors = [
+    {name = "Sarat Moka", email = "s.moka@unsw.edu.au"},
+]
+dependencies = [
+    "numpy",
+    "scipy",
+    "networkx",
+]
+
+[project.urls]
+Homepage = "https://github.com/smoka-unsw/parkol"
+
+[tool.setuptools.packages.find]
+where = ["src"]

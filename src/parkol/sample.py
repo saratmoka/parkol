@@ -1,0 +1,115 @@
+"""
+Main public API for parkol: sample_coloring().
+"""
+
+import networkx as nx
+
+
+def sample_coloring(graph, k, method='hybrid', seed=None):
+    """Draw an exact uniform sample of a proper k-coloring of a graph.
+
+    Parameters
+    ----------
+    graph : nx.Graph
+        The input graph.
+    k : int
+        Number of colours. Must be at least the chromatic number of the graph.
+    method : str
+        Sampling method to use:
+
+        - ``'hybrid'`` (default): PRS decomposition with auto-selected
+          component solver. Defaults to Huber CFTP (simplest, fastest in
+          practice); falls back to BC20 CFTP if Huber fails to coalesce,
+          and to NRS if k <= Delta.
+        - ``'prs'``: Pure gamma-PRS (iterative).
+        - ``'cftp_huber'``: Huber (2004) bounding-chain CFTP. Requires
+          k > Delta.
+        - ``'cftp_bc20'``: Bhandari & Chakraborty (2020) CFTP. Requires
+          k > 3*Delta.
+        - ``'nrs'``: Naive rejection sampling.
+    seed : int or None
+        Random seed for reproducibility.
+
+    Returns
+    -------
+    colors : dict
+        A proper k-colouring mapping node -> colour (integers in {1, ..., k}).
+
+    Raises
+    ------
+    ValueError
+        If the method is unknown or k does not satisfy the method's condition.
+    RuntimeError
+        If the algorithm does not converge.
+    """
+    if not isinstance(graph, nx.Graph):
+        raise TypeError("graph must be a networkx.Graph")
+    if graph.number_of_nodes() == 0:
+        return {}
+
+    degrees = [d for _, d in graph.degree()]
+    delta = max(degrees) if degrees else 0
+
+    if delta > 0 and k <= delta:
+        raise ValueError(
+            f"Need k > Delta for a proper colouring to be guaranteed. "
+            f"Got k={k}, Delta={delta}."
+        )
+
+    if method == 'hybrid':
+        from .hybrid import prs_hybrid
+
+        # Default to Huber (simpler, faster in practice).
+        # If Huber fails to coalesce on a component, the hybrid's
+        # component solver falls back to BC20, then NRS.
+        solver = 'cftp_huber'
+
+        try:
+            colors, _stats = prs_hybrid(graph, k, seed=seed,
+                                        component_solver=solver)
+            return colors
+        except RuntimeError:
+            # Huber didn't coalesce; retry with BC20 if k > 3*Delta
+            if k > 3 * delta:
+                colors, _stats = prs_hybrid(graph, k, seed=seed,
+                                            component_solver='cftp_bc20')
+                return colors
+            # Last resort: NRS
+            colors, _stats = prs_hybrid(graph, k, seed=seed,
+                                        component_solver='nrs')
+            return colors
+
+    elif method == 'prs':
+        from .prs import prs_graph_coloring
+        colors, _stats = prs_graph_coloring(graph, k, seed=seed)
+        return colors
+
+    elif method == 'cftp_huber':
+        from .cftp_huber import cftp_coloring
+        colors, _stats = cftp_coloring(graph, k, seed=seed)
+        return colors
+
+    elif method == 'cftp_bc20':
+        from .cftp_bc20 import cftp_bc20
+        colors, _stats = cftp_bc20(graph, k, seed=seed)
+        return colors
+
+    elif method == 'nrs':
+        from .utils import has_improper_edge
+        import numpy as np
+        rng = np.random.default_rng(seed)
+        nodes = list(graph.nodes())
+        max_iter = 10**7
+        for _ in range(max_iter):
+            colors = {v: int(rng.integers(1, k + 1)) for v in nodes}
+            if not has_improper_edge(graph, colors):
+                return colors
+        raise RuntimeError(
+            f"NRS did not find a proper colouring in {max_iter} iterations"
+        )
+
+    else:
+        raise ValueError(
+            f"Unknown method '{method}'. Choose from: "
+            f"'hybrid', 'prs', 'cftp_huber', 'cftp_bc20', 'nrs'."
+        )
