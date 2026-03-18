@@ -45,7 +45,7 @@ Full documentation: [https://parkol.readthedocs.io](https://parkol.readthedocs.i
 
 ## Reference
 
-S. Moka et al. (2026). *Near-Linear Time Perfect Sampling of Graph Colourings via Soft Colouring.* Preprint.
+S. Moka and A. Vahedi (2026). *Near-Linear Time Perfect Sampling of Graph Colourings via Soft Colouring.* Preprint.
 
 ## License
 

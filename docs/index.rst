@@ -87,7 +87,7 @@ API Reference
 References
 ----------
 
-- S. Moka et al. (2026).
+- S. Moka and A. Vahedi (2026).
   *Near-Linear Time Perfect Sampling of Graph Colourings via Soft Colouring.*
   Preprint.
 
