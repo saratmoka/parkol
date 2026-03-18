@@ -1,6 +1,8 @@
-# PaRKol
+<p align="center">
+  <img src="logo-parkol.png" alt="PaRKol" width="300">
+</p>
 
-**Pa**rtial **R**ejection sampling for **K**-c**ol**ouring.
+<p align="center"><strong>Pa</strong>rtial <strong>R</strong>ejection sampling for <strong>K</strong>-c<strong>ol</strong>ouring</p>
 
 Exact uniform sampling of proper *k*-colourings of a graph, via the soft colouring framework.
 
