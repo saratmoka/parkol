@@ -4,6 +4,8 @@
 
 Exact uniform sampling of proper *k*-colourings of a graph, via the soft colouring framework.
 
+To our knowledge, PaRKol is the first Python package implementing near-linear time exact uniform sampling of graph colourings via soft colouring and partial rejection sampling.
+
 ## Installation
 
 ```bash
