@@ -42,33 +42,33 @@ def _solve_component_nrs(G, colors, u_values, gamma, comp_mask, rng,
 
 def _solve_component_cftp_huber(G, colors, u_values, gamma, comp_mask, rng,
                                 max_iter=None):
-    """Solve a component by Huber's bounding chain CFTP."""
-    from .cftp_huber import cftp_coloring_on_component
+    """Solve a component by Huber's bounding chain CFTP.
+
+    Produces a uniform proper k-colouring of the component subgraph,
+    independently of the configuration outside the component.
+    Cross-edge conflicts are handled by the outer while loop.
+    """
+    from .cftp_huber import cftp_coloring
 
     k = G['k']
     comp_idx = np.where(comp_mask)[0]
     node_list = G['node_list']
-    comp_vertices = set(node_list[i] for i in comp_idx)
+    comp_vertices = [node_list[i] for i in comp_idx]
 
-    graph = nx.Graph()
+    # Build the subgraph induced by the component (no boundary info)
+    comp_set = set(comp_vertices)
+    subgraph = nx.Graph()
+    subgraph.add_nodes_from(comp_vertices)
     for i in comp_idx:
         v = node_list[i]
         for w_idx in G['adj'][i]:
             w = node_list[w_idx]
-            graph.add_edge(v, w)
-
-    boundary_colors = {}
-    for i in comp_idx:
-        for w_idx in G['adj'][i]:
-            w = node_list[w_idx]
-            if w not in comp_vertices:
-                boundary_colors[w] = int(colors[w_idx])
+            if w in comp_set:
+                subgraph.add_edge(v, w)
 
     seed_val = int(rng.integers(0, 2**31))
     try:
-        col, _ = cftp_coloring_on_component(
-            graph, k, comp_vertices, boundary_colors,
-            seed=seed_val, max_doubling=20)
+        col, _ = cftp_coloring(subgraph, k, seed=seed_val)
         for i in comp_idx:
             v = node_list[i]
             if v in col:
@@ -89,32 +89,32 @@ def _solve_component_cftp_huber(G, colors, u_values, gamma, comp_mask, rng,
 
 def _solve_component_cftp_bc20(G, colors, u_values, gamma, comp_mask, rng,
                                 max_iter=None):
-    """Solve a component by BC20 CFTP (k > 3*Delta)."""
-    from .cftp_bc20 import cftp_bc20_on_component
+    """Solve a component by BC20 CFTP (k > 3*Delta).
+
+    Produces a uniform proper k-colouring of the component subgraph,
+    independently of the configuration outside the component.
+    """
+    from .cftp_bc20 import cftp_bc20
 
     k = G['k']
     comp_idx = np.where(comp_mask)[0]
     node_list = G['node_list']
-    comp_vertices = set(node_list[i] for i in comp_idx)
+    comp_vertices = [node_list[i] for i in comp_idx]
 
-    graph = nx.Graph()
+    # Build the subgraph induced by the component (no boundary info)
+    comp_set = set(comp_vertices)
+    subgraph = nx.Graph()
+    subgraph.add_nodes_from(comp_vertices)
     for i in comp_idx:
         v = node_list[i]
         for w_idx in G['adj'][i]:
             w = node_list[w_idx]
-            graph.add_edge(v, w)
-
-    boundary_colors = {}
-    for i in comp_idx:
-        for w_idx in G['adj'][i]:
-            w = node_list[w_idx]
-            if w not in comp_vertices:
-                boundary_colors[w] = int(colors[w_idx])
+            if w in comp_set:
+                subgraph.add_edge(v, w)
 
     seed_val = int(rng.integers(0, 2**31))
     try:
-        col, _ = cftp_bc20_on_component(
-            graph, k, comp_vertices, boundary_colors, seed=seed_val)
+        col, _ = cftp_bc20(subgraph, k, seed=seed_val)
         for i in comp_idx:
             v = node_list[i]
             if v in col:

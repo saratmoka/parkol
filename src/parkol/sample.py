@@ -59,25 +59,21 @@ def sample_coloring(graph, k, method='hybrid', seed=None):
     if method == 'hybrid':
         from .hybrid import prs_hybrid
 
-        # Default to Huber (simpler, faster in practice).
-        # If Huber fails to coalesce on a component, the hybrid's
-        # component solver falls back to BC20, then NRS.
-        solver = 'cftp_huber'
-
-        try:
-            colors, _stats = prs_hybrid(graph, k, seed=seed,
-                                        component_solver=solver)
-            return colors
-        except RuntimeError:
-            # Huber didn't coalesce; retry with BC20 if k > 3*Delta
-            if k > 3 * delta:
+        # Choose component solver based on k/Delta ratio:
+        # - k > 3*Delta: use Huber CFTP (fast, simple)
+        # - otherwise: use NRS (CFTP may not coalesce quickly)
+        if k > 3 * delta:
+            solver = 'cftp_huber'
+            try:
                 colors, _stats = prs_hybrid(graph, k, seed=seed,
-                                            component_solver='cftp_bc20')
+                                            component_solver=solver)
                 return colors
-            # Last resort: NRS
-            colors, _stats = prs_hybrid(graph, k, seed=seed,
-                                        component_solver='nrs')
-            return colors
+            except RuntimeError:
+                pass  # fall through to NRS
+
+        colors, _stats = prs_hybrid(graph, k, seed=seed,
+                                    component_solver='nrs')
+        return colors
 
     elif method == 'prs':
         from .prs import prs_graph_coloring
