@@ -5,7 +5,8 @@ Main public API for parkol: sample_coloring().
 import networkx as nx
 
 
-def sample_coloring(graph, k, method='hybrid', seed=None):
+def sample_coloring(graph, k, method='hybrid', seed=None, adaptive=False,
+                    target_components=None):
     """Draw an exact uniform sample of a proper k-coloring of a graph.
 
     Parameters
@@ -21,6 +22,10 @@ def sample_coloring(graph, k, method='hybrid', seed=None):
           component solver. Defaults to Huber CFTP (simplest, fastest in
           practice); falls back to BC20 CFTP if Huber fails to coalesce,
           and to NRS if k <= Delta.
+        - ``'hybrid_gibbs'``: PRS decomposition with Gibbs sampler as
+          component solver (FGY22-style). Suitable for graphs with
+          sub-exponential neighbourhood growth (e.g. lattices) where
+          strong spatial mixing holds.
         - ``'prs'``: Pure gamma-PRS (iterative).
         - ``'cftp_huber'``: Huber (2004) bounding-chain CFTP. Requires
           k > Delta.
@@ -29,6 +34,16 @@ def sample_coloring(graph, k, method='hybrid', seed=None):
         - ``'nrs'``: Naive rejection sampling.
     seed : int or None
         Random seed for reproducibility.
+    adaptive : bool
+        If True (and method is ``'hybrid'`` or ``'hybrid_gibbs'``), use an
+        adaptive gamma-sequence that decreases gamma to encourage the
+        resampling set to split into multiple components, maximising
+        parallelisation. The number of components may be fewer than
+        ``target_components`` since the gamma-soft bad set is a subset
+        of the bad set for proper colouring.
+    target_components : int or None
+        Maximum number of desired components for the adaptive strategy.
+        Defaults to the number of available CPU cores.
 
     Returns
     -------
@@ -65,14 +80,24 @@ def sample_coloring(graph, k, method='hybrid', seed=None):
         if k > 3 * delta:
             solver = 'cftp_huber'
             try:
-                colors, _stats = prs_hybrid(graph, k, seed=seed,
-                                            component_solver=solver)
+                colors, _stats = prs_hybrid(
+                    graph, k, seed=seed, component_solver=solver,
+                    adaptive=adaptive,
+                    target_components=target_components)
                 return colors
             except RuntimeError:
                 pass  # fall through to NRS
 
-        colors, _stats = prs_hybrid(graph, k, seed=seed,
-                                    component_solver='nrs')
+        colors, _stats = prs_hybrid(
+            graph, k, seed=seed, component_solver='nrs',
+            adaptive=adaptive, target_components=target_components)
+        return colors
+
+    elif method == 'hybrid_gibbs':
+        from .hybrid import prs_hybrid
+        colors, _stats = prs_hybrid(
+            graph, k, seed=seed, component_solver='gibbs',
+            adaptive=adaptive, target_components=target_components)
         return colors
 
     elif method == 'prs':
@@ -107,5 +132,6 @@ def sample_coloring(graph, k, method='hybrid', seed=None):
     else:
         raise ValueError(
             f"Unknown method '{method}'. Choose from: "
-            f"'hybrid', 'prs', 'cftp_huber', 'cftp_bc20', 'nrs'."
+            f"'hybrid', 'hybrid_gibbs', 'prs', 'cftp_huber', "
+            f"'cftp_bc20', 'nrs'."
         )
