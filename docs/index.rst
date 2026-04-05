@@ -1,15 +1,15 @@
-parkol — Exact Uniform Sampling of Graph Colourings
+parkol — Exact Uniform Sampling of Graph Colorings
 ====================================================
 
-**PaRKol** (**Pa**\ rtial **R**\ ejection sampling for **K**-c\ **ol**\ ouring)
+**PaRKol** (**Pa**\ rtial **R**\ ejection sampling for **K**-c\ **ol**\ oring)
 is a Python package for drawing exact uniform samples of proper
-:math:`k`-colourings of a graph.
+:math:`k`-colorings of a graph.
 
-It implements the *soft colouring* framework, which decomposes the global
+It implements the *soft coloring* framework, which decomposes the global
 sampling problem into small independent subproblems via partial rejection
 sampling (PRS), then solves each subproblem with coupling from the past
-(CFTP). The algorithm is inherently parallelisable and achieves
-near-linear runtime in the number of vertices.
+(CFTP) or other exact samplers. The algorithm is inherently parallelizable
+and achieves near-linear runtime in the number of vertices.
 
 Installation
 ------------
@@ -38,15 +38,16 @@ Pass the ``method`` argument to select the sampling algorithm:
 
 .. code-block:: python
 
-   colors = sample_coloring(G, k=5)                        # hybrid (default)
-   colors = sample_coloring(G, k=5, method='prs')          # pure gamma-PRS
-   colors = sample_coloring(G, k=15, method='cftp_huber')  # Huber CFTP
-   colors = sample_coloring(G, k=10, method='cftp_bc20')   # BC20 CFTP
-   colors = sample_coloring(G, k=5, method='nrs')          # naive rejection
+   colors = sample_coloring(G, k=5)                          # hybrid (default)
+   colors = sample_coloring(G, k=5, method='hybrid_gibbs')   # hybrid + Gibbs
+   colors = sample_coloring(G, k=5, method='prs')            # pure gamma-PRS
+   colors = sample_coloring(G, k=15, method='cftp_huber')    # Huber CFTP
+   colors = sample_coloring(G, k=10, method='cftp_bc20')     # BC20 CFTP
+   colors = sample_coloring(G, k=5, method='nrs')            # naive rejection
 
 .. list-table::
    :header-rows: 1
-   :widths: 15 55 30
+   :widths: 18 52 30
 
    * - Method
      - Description
@@ -54,11 +55,15 @@ Pass the ``method`` argument to select the sampling algorithm:
    * - ``'hybrid'``
      - PRS decomposition + CFTP on components (default, recommended)
      - :math:`k > \Delta`
+   * - ``'hybrid_gibbs'``
+     - PRS decomposition + Gibbs sampler on components (for graphs with
+       sub-exponential neighborhood growth, e.g. lattices)
+     - :math:`k > \Delta`
    * - ``'prs'``
      - Pure :math:`\gamma`-PRS (iterative)
      - :math:`k > \Delta`
    * - ``'cftp_huber'``
-     - Huber (2004) bounding-chain CFTP
+     - Huber (1998) bounding-chain CFTP
      - :math:`k > \Delta`
    * - ``'cftp_bc20'``
      - Bhandari & Chakraborty (2020) CFTP
@@ -66,6 +71,21 @@ Pass the ``method`` argument to select the sampling algorithm:
    * - ``'nrs'``
      - Naive rejection sampling
      - :math:`k > \Delta`
+
+Adaptive Gamma-Sequence
+-----------------------
+
+The ``adaptive`` option uses a gamma-sequence that encourages the
+resampling set to split into multiple connected components, enabling
+parallel processing:
+
+.. code-block:: python
+
+   # Adaptive with 8 target components
+   colors = sample_coloring(G, k=20, adaptive=True, target_components=8)
+
+   # Also works with hybrid_gibbs
+   colors = sample_coloring(G, k=20, method='hybrid_gibbs', adaptive=True)
 
 Reproducibility
 ---------------
@@ -88,17 +108,17 @@ References
 ----------
 
 - S. Moka and A. Vahedi (2026).
-  *Near-Linear Time Perfect Sampling of Graph Colourings via Soft Colouring.*
-  Preprint.
+  *Uniform Sampling of Proper Graph Colorings via Soft Coloring and
+  Partial Rejection Sampling.* Preprint.
 
 - S. Bhandari and S. Chakraborty (2020).
   *Improved Bounds for Perfect Sampling of k-Colorings in Graphs.*
   Proc. STOC 2020.
 
-- M. Huber (2004).
+- M. Huber (1998).
   *Perfect Sampling Using Bounding Chains.*
-  Ann. Appl. Probab. 14(2), 734–753.
+  Ann. Appl. Probab. 14(2), 734--753.
 
-- M. T. Guo, M. Jerrum, and J. Liu (2019).
-  *Uniform Sampling Through the Lovász Local Lemma.*
-  J. ACM 66(3), 18:1–18:31.
+- H. Guo, M. Jerrum, and J. Liu (2017).
+  *Uniform Sampling Through the Lovasz Local Lemma.*
+  Proc. STOC 2017, 342--355.
