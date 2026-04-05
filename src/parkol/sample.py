@@ -22,10 +22,6 @@ def sample_coloring(graph, k, method='hybrid', seed=None, adaptive=False,
           component solver. Defaults to Huber CFTP (simplest, fastest in
           practice); falls back to BC20 CFTP if Huber fails to coalesce,
           and to NRS if k <= Delta.
-        - ``'hybrid_gibbs'``: PRS decomposition with Gibbs sampler as
-          component solver (FGY22-style). Suitable for graphs with
-          sub-exponential neighbourhood growth (e.g. lattices) where
-          strong spatial mixing holds.
         - ``'prs'``: Pure gamma-PRS (iterative).
         - ``'cftp_huber'``: Huber (2004) bounding-chain CFTP. Requires
           k > Delta.
@@ -35,7 +31,7 @@ def sample_coloring(graph, k, method='hybrid', seed=None, adaptive=False,
     seed : int or None
         Random seed for reproducibility.
     adaptive : bool
-        If True (and method is ``'hybrid'`` or ``'hybrid_gibbs'``), use an
+        If True (and method is ``'hybrid'``), use an
         adaptive gamma-sequence that decreases gamma to encourage the
         resampling set to split into multiple components, maximising
         parallelisation. The number of components may be fewer than
@@ -93,13 +89,6 @@ def sample_coloring(graph, k, method='hybrid', seed=None, adaptive=False,
             adaptive=adaptive, target_components=target_components)
         return colors
 
-    elif method == 'hybrid_gibbs':
-        from .hybrid import prs_hybrid
-        colors, _stats = prs_hybrid(
-            graph, k, seed=seed, component_solver='gibbs',
-            adaptive=adaptive, target_components=target_components)
-        return colors
-
     elif method == 'prs':
         from .prs import prs_graph_coloring
         colors, _stats = prs_graph_coloring(graph, k, seed=seed)
@@ -132,6 +121,5 @@ def sample_coloring(graph, k, method='hybrid', seed=None, adaptive=False,
     else:
         raise ValueError(
             f"Unknown method '{method}'. Choose from: "
-            f"'hybrid', 'hybrid_gibbs', 'prs', 'cftp_huber', "
-            f"'cftp_bc20', 'nrs'."
+            f"'hybrid', 'prs', 'cftp_huber', 'cftp_bc20', 'nrs'."
         )

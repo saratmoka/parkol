@@ -39,7 +39,6 @@ Pass the ``method`` argument to select the sampling algorithm:
 .. code-block:: python
 
    colors = sample_coloring(G, k=5)                          # hybrid (default)
-   colors = sample_coloring(G, k=5, method='hybrid_gibbs')   # hybrid + Gibbs
    colors = sample_coloring(G, k=5, method='prs')            # pure gamma-PRS
    colors = sample_coloring(G, k=15, method='cftp_huber')    # Huber CFTP
    colors = sample_coloring(G, k=10, method='cftp_bc20')     # BC20 CFTP
@@ -54,10 +53,6 @@ Pass the ``method`` argument to select the sampling algorithm:
      - Condition
    * - ``'hybrid'``
      - PRS decomposition + CFTP on components (default, recommended)
-     - :math:`k > \Delta`
-   * - ``'hybrid_gibbs'``
-     - PRS decomposition + Gibbs sampler on components (for graphs with
-       sub-exponential neighborhood growth, e.g. lattices)
      - :math:`k > \Delta`
    * - ``'prs'``
      - Pure :math:`\gamma`-PRS (iterative)
@@ -84,8 +79,6 @@ parallel processing:
    # Adaptive with 8 target components
    colors = sample_coloring(G, k=20, adaptive=True, target_components=8)
 
-   # Also works with hybrid_gibbs
-   colors = sample_coloring(G, k=20, method='hybrid_gibbs', adaptive=True)
 
 Reproducibility
 ---------------

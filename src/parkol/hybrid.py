@@ -124,45 +124,6 @@ def _solve_component_cftp_bc20(G, colors, u_values, gamma, comp_mask, rng,
         _solve_component_nrs(G, colors, u_values, gamma, comp_mask, rng)
 
 
-def _solve_component_gibbs(G, colors, u_values, gamma, comp_mask, rng,
-                            max_iter=None):
-    """Solve a component via systematic-scan Gibbs sampling (FGY22-style).
-
-    Under strong spatial mixing (e.g. on graphs with sub-exponential
-    neighbourhood growth and k >= C*Delta), the Gibbs sampler mixes in
-    O(n log n) steps on a graph of n vertices, giving O(m) expected time
-    on a component of size m.
-
-    This produces a (near-)uniform proper k-colouring of the component
-    subgraph. After sufficient mixing, the output is treated as exact.
-
-    For small components (size O(log n)), a moderate number of sweeps
-    suffices.
-    """
-    k = G['k']
-    comp_idx = np.where(comp_mask)[0]
-    s = len(comp_idx)
-    if s == 0:
-        return
-
-    # Number of full systematic scans: O(s * log s) single-site updates
-    n_sweeps = max(10, int(3 * np.log(s + 1)))
-
-    for _sweep in range(n_sweeps):
-        for i in comp_idx:
-            # Collect colours of neighbours
-            forbidden = set()
-            for w in G['adj'][i]:
-                forbidden.add(int(colors[w]))
-
-            # Available colours
-            available = [c for c in range(1, k + 1) if c not in forbidden]
-            if available:
-                colors[i] = rng.choice(available)
-            # else: no valid colour (shouldn't happen if k > Delta)
-
-    u_values[comp_idx] = rng.random(size=s)
-
 
 # ===================================================================
 # Hybrid PRS algorithm
@@ -185,10 +146,6 @@ def prs_hybrid(graph, k, gamma_base=0.9, max_levels=1000, seed=None,
         'nrs'        : Naive rejection sampling on each component.
         'cftp_huber' : Huber (2004) bounding chain CFTP.
         'cftp_bc20'  : Bhandari & Chakraborty (2020) CFTP.
-        'gibbs'      : Systematic-scan Gibbs sampler (FGY22-style).
-                       Suitable for graphs with sub-exponential
-                       neighbourhood growth where strong spatial mixing
-                       holds.
     adaptive : bool
         If True, use an adaptive gamma-sequence: at each level, decrease
         gamma by small steps to encourage the resampling set to split
@@ -217,7 +174,6 @@ def prs_hybrid(graph, k, gamma_base=0.9, max_levels=1000, seed=None,
         'nrs': _solve_component_nrs,
         'cftp_huber': _solve_component_cftp_huber,
         'cftp_bc20': _solve_component_cftp_bc20,
-        'gibbs': _solve_component_gibbs,
     }
     if component_solver not in solvers:
         raise ValueError(
